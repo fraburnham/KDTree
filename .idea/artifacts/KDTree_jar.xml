@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="KDTree:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/KDTree_jar</output-path>
+    <root id="archive" name="KDTree.jar">
+      <element id="module-output" name="KDTree" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../BST/out/artifacts/BST_jar/BST.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$APPLICATION_HOME_DIR$/lib/junit.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

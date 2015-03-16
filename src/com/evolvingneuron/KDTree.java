@@ -96,24 +96,23 @@ public class KDTree<Point> extends BST {
 
         //finding the closest point will need a stack of nodes
         KDNode<Point> champion = walk(point);
+
+
+
         BigDecimal distance = methods.distance(point, champion.getValue());
-        Stack<KDNode<Point>> nodes = new Stack<KDNode<Point>>();
-        nodes.push((KDNode<Point>) champion.getParent());
+        Stack<Node> nodes = pathToRoot(champion); //new Stack<KDNode<Point>>();
         int k = methods.getDimensions(point);
 
         while (!nodes.empty()) {
             //pop a node
-            KDNode<Point> n = nodes.pop();
-            Point nPoint = n.getValue();
+            System.out.println("Nodes on stack: " + nodes.size());
+            KDNode<Point> n = (KDNode<Point>) nodes.pop();
+
             int dimension = n.getDepth() % k;
 
-            //push the parent node on
-            KDNode<Point> parent = (KDNode<Point>) n.getParent();
-            if (parent != null) {
-                nodes.push(parent);
-            }
+            Point nPoint = n.getValue();
 
-            //check the current node to see if it is closer than the champion
+            //check the parent node to see if it is closer than the champion
             BigDecimal nDistance = methods.distance(point, nPoint);
             if (nDistance.compareTo(distance) < 0) {
                 distance = nDistance;
@@ -122,7 +121,7 @@ public class KDTree<Point> extends BST {
 
             //the closest point on the division line to determine if the other child
             //could contain a closer result.
-            Point divisionLine = methods.setDimensionalValue(
+            Point divisionLine = methods.setDimensionValue(
                     dimension,
                     methods.getDimensionValue(dimension, nPoint),
                     point);
@@ -137,14 +136,20 @@ public class KDTree<Point> extends BST {
             if (dDistance.compareTo(nDistance) < 0) {
                 //if the dDistance is closer than the champion there may be a point
                 //on the other side of the division that is closer than the champion
-                nodes.push((KDNode<Point>) n.getLeftChild());
-                nodes.push((KDNode<Point>) n.getRightChild());
-            } else if (comp < 0) {
-                //if dDistance is not closer then just push the correct side of the division
-                //based on n.Point[dimension] - point[dimension] if neg go left if pos go right
-                nodes.push((KDNode<Point>) n.getLeftChild());
-            } else if (comp > 0) {
-                nodes.push((KDNode<Point>) n.getRightChild());
+
+                if (comp < 0) {
+                    //the point is on the left, push the right
+                    Node toPush = n.getRightChild();
+                    if (toPush != null) {
+                        nodes.push(toPush);
+                    }
+                } else {
+                    //the point is on the right, push the left
+                    Node toPush = n.getLeftChild();
+                    if (toPush != null) {
+                        nodes.push(toPush);
+                    }
+                }
             }
         }
 
