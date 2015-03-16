@@ -37,4 +37,13 @@ public interface IKDTree<Point> {
      *         dimension.
      */
     BigDecimal getDimensionValue(int dimension, Point point);
+
+    /**
+     *
+     * @param dimension
+     * @param value
+     * @param point
+     * @return
+     */
+    Point setDimensionalValue(int dimension, BigDecimal value, Point point);
 }

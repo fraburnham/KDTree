@@ -12,43 +12,10 @@ import java.util.Stack;
  *
  * @param <Point>
  */
-public class KDTree<Point> extends BST<Point> {
-
-    class Node extends BST<Point>.Node {
-        /** Stores the depth of the node */
-        private int depth;
-
-        /**
-         *
-         * @param parent
-         * @param k
-         * @param v
-         * @param depth
-         */
-        public Node(Node parent, Comparable k, Point v, int depth) {
-            super(parent, k, v);
-            this.depth = depth;
-        }
-
-        /**
-         *
-         * @return
-         */
-        public int getDepth() {
-            return depth;
-        }
-
-        /**
-         *
-         * @param depth
-         */
-        public void setDepth(int depth) {
-            this.depth = depth;
-        }
-    }
+public class KDTree<Point> extends BST {
 
     /** The root node of this tree. null for an empty tree */
-    private Node root = null;
+    private KDNode<Point> root = null;
     /** The methods needed to provide data abstraction */
     private IKDTree<Point> methods;
 
@@ -70,8 +37,8 @@ public class KDTree<Point> extends BST<Point> {
      * @param point
      * @return
      */
-    private Node walk(final Point point) {
-        Node n = root;
+    private KDNode<Point> walk(final Point point) {
+        KDNode<Point> n = root;
         int k = methods.getDimensions(point);
 
         for (int depth = 0;; depth++) {
@@ -81,13 +48,12 @@ public class KDTree<Point> extends BST<Point> {
                 if (n.getRightChild() == null) {
                     break;
                 }
-                //should be safe to upcast since we found it on a KDTree right?
-                n = (KDTree.Node) n.getRightChild();
+                n = (KDNode<Point>) n.getRightChild();
             } else {
                 if (n.getLeftChild() == null) {
                     break;
                 }
-                n = (KDTree.Node) n.getLeftChild();
+                n = (KDNode<Point>) n.getLeftChild();
             }
         }
 
@@ -98,27 +64,22 @@ public class KDTree<Point> extends BST<Point> {
      * Insert a new point into the existing tree.
      * @param point The point to insert.
      */
-    public void insert(final Point point) {
+    public final void insert(final Point point) {
         if (root == null) {
-            //do insert here
-            root = new Node(null, methods.getDimensionValue(0, point), point, 0);
+            root = new KDNode<Point>(null, methods.getDimensionValue(0, point), point, 0);
             return;
         }
-        //so the insert loop, what will it look like
 
-        //this is insert
-        //compare the relevant dimension until you get to the depth of the new
-        //points partition, once at that dimension find a place to put the point
-        Node n = walk(point);
+        KDNode<Point> n = walk(point);
         final int depth = n.getDepth();
         final int k = methods.getDimensions(point);
         final int dimension = depth % k;
         final int comp = n.getKey().compareTo(methods.getDimensionValue(dimension, point));
         //check for right or left and write it out
         if (comp > 0) {
-            n.setRightChild(new Node(n, methods.getDimensionValue(((dimension + 1) % k), point), point, depth + 1));
+            n.setRightChild(new KDNode<Point>(n, methods.getDimensionValue(((dimension + 1) % k), point), point, depth + 1));
         } else {
-            n.setLeftChild(new Node(n, methods.getDimensionValue(((dimension + 1) % k), point), point, depth + 1));
+            n.setLeftChild(new KDNode<Point>(n, methods.getDimensionValue(((dimension + 1) % k), point), point, depth + 1));
         }
     }
 
@@ -127,47 +88,64 @@ public class KDTree<Point> extends BST<Point> {
      * @param point
      * @return
      */
-    public final Node closest(final Point point) {
+    public final KDNode<Point> closest(final Point point) {
         if (root == null) {
             //TODO: raise exception can't search an empty tree
         }
 
 
         //finding the closest point will need a stack of nodes
-        Node champion = walk(point);
+        KDNode<Point> champion = walk(point);
         BigDecimal distance = methods.distance(point, champion.getValue());
-        Stack<Node> nodes = new Stack<Node>();
-        nodes.push((KDTree.Node) champion.getParent());
+        Stack<KDNode<Point>> nodes = new Stack<KDNode<Point>>();
+        nodes.push((KDNode<Point>) champion.getParent());
         int k = methods.getDimensions(point);
 
         while (!nodes.empty()) {
             //pop a node
-            Node n = nodes.pop();
+            KDNode<Point> n = nodes.pop();
+            Point nPoint = n.getValue();
+            int dimension = n.getDepth() % k;
 
             //push the parent node on
-            Node parent = (KDTree.Node) n.getParent();
+            KDNode<Point> parent = (KDNode<Point>) n.getParent();
             if (parent != null) {
                 nodes.push(parent);
             }
 
             //check the current node to see if it is closer than the champion
-            BigDecimal nDistance = methods.distance(point, n.getValue());
+            BigDecimal nDistance = methods.distance(point, nPoint);
             if (nDistance.compareTo(distance) < 0) {
                 distance = nDistance;
                 champion = n;
             }
 
-            //check the distance in the dimension solved for with depth
-            int dimension = n.getDepth() % k;
-            //absolute value of the distance between
-            //maybe use the sign, find out if we're left or right and the sign will
-            //tell us which side to ignore (duh) need to use the sign
-            nDistance = methods.getDimensionValue(dimension, n.getValue()).add(
-                    methods.getDimensionValue(dimension, point).negate()).abs();
+            //the closest point on the division line to determine if the other child
+            //could contain a closer result.
+            Point divisionLine = methods.setDimensionalValue(
+                    dimension,
+                    methods.getDimensionValue(dimension, nPoint),
+                    point);
 
-            //if the division line crosses the circle then push its child on that side
-            //of the division onto the stack.
+            BigDecimal dDistance = methods.distance(point, divisionLine);
 
+            BigDecimal side = methods.getDimensionValue(dimension, nPoint).add(
+                    methods.getDimensionValue(dimension, point).negate());
+
+            int comp = side.compareTo(BigDecimal.ZERO);
+
+            if (dDistance.compareTo(nDistance) < 0) {
+                //if the dDistance is closer than the champion there may be a point
+                //on the other side of the division that is closer than the champion
+                nodes.push((KDNode<Point>) n.getLeftChild());
+                nodes.push((KDNode<Point>) n.getRightChild());
+            } else if (comp < 0) {
+                //if dDistance is not closer then just push the correct side of the division
+                //based on n.Point[dimension] - point[dimension] if neg go left if pos go right
+                nodes.push((KDNode<Point>) n.getLeftChild());
+            } else if (comp > 0) {
+                nodes.push((KDNode<Point>) n.getRightChild());
+            }
         }
 
         //once the stack is empty we've searched the nearby space for
