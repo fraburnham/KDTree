@@ -1,6 +1,5 @@
 package com.evolvingneuron;
 
-import java.math.BigDecimal;
 import java.util.Stack;
 
 /**
@@ -93,28 +92,21 @@ public class KDTree<Point> extends BST {
             //TODO: raise exception can't search an empty tree
         }
 
-
         //finding the closest point will need a stack of nodes
         KDNode<Point> champion = walk(point);
-
-
-
-        BigDecimal distance = methods.distance(point, champion.getValue());
+        float distance = methods.distance(point, champion.getValue());
         Stack<Node> nodes = pathToRoot(champion); //new Stack<KDNode<Point>>();
         int k = methods.getDimensions(point);
 
         while (!nodes.empty()) {
             //pop a node
-            System.out.println("Nodes on stack: " + nodes.size());
             KDNode<Point> n = (KDNode<Point>) nodes.pop();
-
             int dimension = n.getDepth() % k;
-
             Point nPoint = n.getValue();
 
-            //check the parent node to see if it is closer than the champion
-            BigDecimal nDistance = methods.distance(point, nPoint);
-            if (nDistance.compareTo(distance) < 0) {
+            //check the node to see if it is closer than the champion
+            float nDistance = methods.distance(point, nPoint);
+            if (nDistance < distance) {
                 distance = nDistance;
                 champion = n;
             }
@@ -125,19 +117,14 @@ public class KDTree<Point> extends BST {
                     dimension,
                     methods.getDimensionValue(dimension, nPoint),
                     point);
+            float dDistance = methods.distance(point, divisionLine);
+            float side = methods.getDimensionValue(dimension, nPoint) -
+                    methods.getDimensionValue(dimension, point);
 
-            BigDecimal dDistance = methods.distance(point, divisionLine);
-
-            BigDecimal side = methods.getDimensionValue(dimension, nPoint).add(
-                    methods.getDimensionValue(dimension, point).negate());
-
-            int comp = side.compareTo(BigDecimal.ZERO);
-
-            if (dDistance.compareTo(nDistance) < 0) {
-                //if the dDistance is closer than the champion there may be a point
-                //on the other side of the division that is closer than the champion
-
-                if (comp < 0) {
+            //if the dDistance is closer than the champion there may be a point
+            //on the other side of the division that is closer than the champion
+            if (dDistance < nDistance) {
+                if (side < 0) {
                     //the point is on the left, push the right
                     Node toPush = n.getRightChild();
                     if (toPush != null) {

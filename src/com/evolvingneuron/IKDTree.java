@@ -1,6 +1,5 @@
 package com.evolvingneuron;
 
-import java.math.BigDecimal;
 
 /**
  * This interface describes the functions that KDTree needs the caller to
@@ -16,9 +15,9 @@ public interface IKDTree<Point> {
      *
      * @param a Point a
      * @param b Point b
-     * @return A BigDecimal distance between both points.
+     * @return A float distance between both points.
      */
-    BigDecimal distance(Point a, Point b);
+    float distance(Point a, Point b);
 
     /**
      * Return the number of dimensions that point has.
@@ -33,10 +32,10 @@ public interface IKDTree<Point> {
      *
      * @param dimension The dimension to return. Index starts with 0.
      * @param point The k dimensional point.
-     * @return A BigDecimal that is equal to the point's value in the given
+     * @return A float that is equal to the point's value in the given
      *         dimension.
      */
-    BigDecimal getDimensionValue(int dimension, Point point);
+    float getDimensionValue(int dimension, Point point);
 
     /**
      *
@@ -45,5 +44,5 @@ public interface IKDTree<Point> {
      * @param point
      * @return
      */
-    Point setDimensionValue(int dimension, BigDecimal value, Point point);
+    Point setDimensionValue(int dimension, float value, Point point);
 }
